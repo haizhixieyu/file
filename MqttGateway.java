@@ -1,4 +1,4 @@
-package com.happytime188.compose.mqtt.gateway;
+pom.xmlpackage com.happytime188.compose.mqtt.gateway;
 
 import org.springframework.integration.annotation.MessagingGateway;
 import org.springframework.integration.mqtt.support.MqttHeaders;
