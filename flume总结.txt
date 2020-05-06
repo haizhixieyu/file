@@ -1,0 +1,151 @@
+1. flume ng架构:
+
+   Source ----->channel ---->sink
+
+ 1.source: 负责读取数据源 存储到channel中
+
+ 2.channel： 负责存储event数据
+  
+ 3. 负责从channel中获取数据到目的地
+
+ 
+2. event 可以携带header的头信息 event headers. event body）
+
+3. flume的核心概念
+
+  client event  agent：Source channel sinks  
+  其他组件 Interceptor  channel selector sink processor
+
+4.
+
+  拦截器：作用于Source，按照设定的顺序对event装饰或者过滤
+  通道选择器：允许Source基于预设的从所有的通道中选择一个或者多个
+  SinkGroup:多个Sink可以构成一个SinkGroup可以实现Sink的负载均衡/故障转移
+
+5. 配置文件的设置步骤
+
+ 1.命名组件  2.配置source 3.配置sink 4.配置channel 5. 组建各个组建
+
+ 1.source的常用接收方式：
+
+  1.avro
+   配置source
+   a1.sources.r1.type = avro
+   a1.sources.r1.bind = 0.0.0.0
+   a1.sources.r1.port = 4141
+
+ 2.thrift
+  a1.sources.r1.type = thrift
+  a1.sources.r1.bind = 0.0.0.0
+  a1.sources.r1.port = 4141
+
+
+ 3.Taildir Source（动态采集文本行）
+  
+  a1.sources.r1.type = TAILDIR
+  a1.sources.r1.filegroups = f1 f2
+  a1.sources.r1.filegroups.f1 = /root/tail_dir/.*\.java
+  a1.sources.r1.filegroups.f2 = /root/tail_dir/.*\.log
+  a1.sources.r1.headers.f1.from= f1
+  a1.sources.r1.headers.f2.from = f2
+  a1.sources.r1.fileHeader = true
+
+2. file_roll 类型的sink
+
+ 配置： 
+  a1.sinks.k1.type = file_roll
+  a1.sinks.k1.sink.directory = /root/file_roll （文件存储的路径）
+  a1.sinks.k1.sink.rollInterval = 0
+
+ 
+3. 拦截器： 作用于resource 按照设定的顺序对evert 装饰或者过滤
+
+ 配置拦截器：
+
+4.source Selector
+
+ 形式划分：
+  Replication：（数据同步给多个channel）
+  设置channel：
+  agent.channels.c1.type = memory
+  agent.channels.c1.capacity = 100
+  agent.channels.c1.transactionCapacity = 100
+  agent.channels.c2.type = file （数据同步）
+
+  设置sinks：
+  agent.sinks.sk1.type = file_roll
+  agent.sinks.sk1.sink.directory = /root/dir1
+  agent.sinks.sk1.sink.rollInterval=0
+
+  agent.sinks.sk2.type = file_roll
+  agent.sinks.sk2.sink.directory = /root/dir2
+  agent.sinks.sk2.sink.rollInterval=0
+ 
+  设置channel Selector
+  agent.sources.s1.selector.type = replicating
+
+  Multiplexing：（数据分流）
+
+  # 添加正则拦截器
+    agent.sources.s1.interceptors = i1
+    agent.sources.s1.interceptors.i1.type= regex_extractor
+    agent.sources.s1.interceptors.i1.regex=^(ERROR|INFO|WARN).*
+    agent.sources.s1.interceptors.i1.serializers = s1
+    agent.sources.s1.interceptors.i1.serializers.s1.name = level
+  
+  设置channel Selector         
+
+  agent.sources.s1.selector.type = multiplexing
+  agent.sources.s1.selector.header = level
+  agent.sources.s1.selector.mapping.ERROR = c1
+  agent.sources.s1.selector.mapping.INFO= c2
+  agent.sources.s1.selector.mapping.WARN = c2
+  agent.sources.s1.selector.default = c2
+
+  设置channel：
+  agent.channels.c1.type = memory
+  agent.channels.c1.capacity = 100
+  agent.channels.c1.transactionCapacity = 100
+  agent.channels.c2.type = file （数据同步）
+ 
+
+ 5. sinkGroup (实现sink的负载均衡和故障转移）
+
+ # 定义sinks
+   agent.sinks.sk1.type = file_roll
+   agent.sinks.sk1.sink.directory = /root/dir1
+   agent.sinks.sk1.sink.rollInterval=0
+   agent.sinks.sk2.type = file_roll
+   agent.sinks.sk2.sink.directory = /root/dir2
+   agent.sinks.sk2.sink.rollInterval=0
+  # 对sink 做分组
+  agent.sinkgroups = g1
+  agent.sinkgroups.g1.sinks = sk1 sk2
+  agent.sinkgroups.g1.processor.type = load_balance
+  agent.sinkgroups.g1.processor.backoff = true
+  agent.sinkgroups.g1.processor.selector = round_robin 
+ 
+   
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+   
+ 
