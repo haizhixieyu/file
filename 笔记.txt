@@ -1,0 +1,172 @@
+Flume安装步骤
+
+ 1.解压到/usr
+ [root@CentOS ~]# tar zxf apache-flume-1.7.0-bin.tar.gz -C /usr/
+ [root@CentOS ~]# ln -s /usr/apache-flume-1.7.0-bin/ flume
+ 2.配置flume配置文件
+ [root@CentOS flume]# cp conf/flume-conf.properties.template conf/flume-conf.properties
+ 
+ 配置flume-config.properties
+        # 命名组件 a1标示 agent名字
+	a1.sources = s1
+	a1.sinks = sk1
+	a1.channels = c1
+
+	# 定义source类型
+	a1.sources.s1.type = netcat
+	a1.sources.s1.bind = CentOS
+	a1.sources.s1.port = 8888
+
+	# 定义sink类型
+	a1.sinks.sk1.type = logger
+
+	# 定义channel
+	a1.channels.c1.type = memory
+	a1.channels.c1.capacity = 1000
+
+	# 对接各个组件
+	a1.sources.s1.channels = c1
+	a1.sinks.sk1.channel = c1
+
+   3.启动flume
+      [root@CentOS flume]# ./bin/flume-ng agent --conf conf -f conf/flume-conf.properties -n agent -Dflume.root.logger=INFO,console
+
+   注意：CentOS需要提前安装telnet服务 yum install telnet
+   telnet CentOS 8888
+
+   agent:a1 source :s1 sink:sk1
+
+    Source: 
+	netcat:
+		a1.sources.s1.type = netcat
+		a1.sources.s1.bind = CentOS
+		a1.sources.s1.port = 8888
+	exec:
+		a1.sources.s1.type = exec
+		a1.sources.s1.command = tail -F /var/log/secure
+	
+	spooldir:(监控，某个目录下是否有新文件，不支持文件内容跟新)
+		a1.sources.s1.type = spooldir
+		a1.sources.s1.spoolDir = /root/spooldir
+		a1.sources.s1.fileHeader = true
+		a1.sources.s1.deletePolicy = never/immediate
+		a1.sources.s1.includePattern = 正则
+		a1.sources.s1.ignorePattern = 正则
+	TAILDIR: 
+		a1.sources.s1.type = TAILDIR
+		a1.sources.s1.positionFile = /root/flumepos/taildir_position.json
+		a1.sources.s1.filegroups =f1 f2
+		a1.sources.s1.filegroups.f1 = /root/taildir1/.*.log
+		a1.sources.s1.filegroups.f2 = /root/taildir2/.*.log
+
+     channel:
+        memory:
+		a1.channels.c1.type = memory
+		a1.channels.c1.capacity = 1000
+     Sink:
+        logger(debug使用)
+		a1.sinks.sk1.type = logger
+        file_roll
+		a1.sinks.sk1.type = file_roll
+		a1.sinks.sk1.sink.directory = /root/dir1
+		a1.sinks.sk1.sink.rollInterval=0
+	HDFS：
+	        a1.sinks.sk1.type = hdfs
+		a1.sinks.sk1.hdfs.path= /root/dir1
+		a1.sinks.sk1.hdfs.filePrefix = events-
+		a1.sinks.sk1.hdfs.rollInterval=0
+		a1.sinks.sk1.hdfs.rollSize=
+		a1.sinks.sk1.hdfs.rollCount=0
+        HBase:
+	       a1.sinks.sk1.type = hbase
+	       a1.sinks.sk1.table = baizhi:t_order_log
+               a1.sinks.sk1.columnFamily = cf1
+               a1.sinks.sk1.serializer = org.apache.flume.sink.hbase.RegexHbaseEventSerializer
+               a1.sinks.sk1.zookeeperQuorum=CentOS:2181
+        Kafka :
+	        a1.sinks.sk1.type = org.apache.flume.sink.kafka.KafkaSink
+		a1.sinks.sk1.kafka.topic = mytopic
+		a1.sinks.sk1.kafka.bootstrap.servers =CentOS:9092,CentOS:9093,CentOS:9094
+		a1.sinks.sk1.kafka.flumeBatchSize = 20
+		a1.sinks.sk1.kafka.producer.acks = 1
+		a1.sinks.sk1.kafka.producer.linger.ms = 1
+		a1.sinks.ski.kafka.producer.compression.type = snappy
+    
+拦截器：Host Interceptor、Timestamp Interceptor、Search and Replace Interceptor
+        Regex Filtering Interceptor、Regex Extractor Interceptor、Static Interceptor
+        UUID Interceptor
+
+Selector：一个Source 对接多个channel
+    
+    1、Replication 形式 数据同步给多个Channel
+    2、Multiplexing形式 数据分流 
+SinkGroup：一个channel对应多个Sink
+
+基站数据：
+
+日志级别 URL        上行流量 下行 日期
+INFO http://www.xxx.com 128 124    2017-12-13 12:10:21  15652034180 ......
+
+Flume:
+
+  java 平台 
+     1.替换log4j实现使用Flume SDK
+     2.spool 只可以采样目录下的新文件/ TAILDIR 强大
+  Nginx  ：
+     spool 只可以采样目录下的新文件/ TAILDIR 强大
+
+Flume: 日志采集
+   1.采集数据  汇总分析  *
+   2.采集日志  系统监控   
+
+采集：
+   日志文件  ---》 flume采集（1级清洗）--> kafka (清洗) --> HBase
+                                                          修改方便、数据易于扩展
+分析：
+   MapReduce On HDFS 、MapReduce On Hbase 定制 Scan
+
+补充：
+  
+  如何采集Nginx 系统日志
+
+  策略：
+    1.需要在运行Nginx 服务器上启动Flume
+      agent：
+        source：spool、TAILDIR
+	channel：file/memory
+	Sink:   AVRO
+      采集到的数据 传递给其他Flume采集节点  -- kafka  -- hbase
+    
+
+   nginx安装目录：/usr/local/nginx-1.11.1
+   日志：/usr/local/nginx-1.11.1/logs/error.log   --- nginx服务错误日志
+                                     /access.log  --- 用户的访问记录
+   日志格式是可以配置
+   指令        名字   日志格式
+     log_format  custom '$remote_addr [$time_local] "$http_referer" $status';
+     //访问日志  
+     access_log  /spool/logs/nginx-access.log custom  buffer=32k;
+     http{
+        log_format  custom '$remote_addr [$time_local] "$http_referer" $status';
+        server{
+	  location{
+	      access_log  /spool/logs/nginx-access.log custom  buffer=32k;
+	  }
+        }
+     }
+    -----------------------------------------------------
+    nginx常时间运行access.log 会越变越大  定时 删除
+	    #!/bin/sh  
+	    filename=/usr/local/nginx-1.11.1/logs/access.log 
+	    pid_path="/usr/local/nginx-1.11.1/logs/nginx.pid"
+	    filesize=`ls -l $filename | awk '{ print $5 }'`  
+	    maxsize=$((1024*1024*1024))  
+	    if [ $filesize -gt $maxsize ]  
+	    then  
+	      echo "$filesize > $maxsize"   
+	      mv $filename /root/spooldir/access_"`date +%Y-%m-%d_%H:%M:%S`".log  
+	      #向nginx主进程发信号重新打开日志
+	      kill -USR1 `cat ${pid_path}`
+	    else   
+	    fi  
+   
