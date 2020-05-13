@@ -1,0 +1,106 @@
+public ResultData restartServer() {
+		try {
+			//systemWebConfig.getSmsPath()=/usr/local/apache-tomcat-8.5.11/sms-0.0.1-SNAPSHOT.jar
+			String smsurl="nohup java -jar "+systemWebConfig.getSmsPath()+">/dev/null 2>&1 &";
+			String killsms=" ps -ef|grep "+systemWebConfig.getSmsPath()+"|awk '{print $2}'|while read pid;do kill -9 $pid;done";
+			Process killprocess = Runtime.getRuntime().exec(new String[]{"/bin/sh","-c", killsms});
+//			Thread.sleep(1000);
+			killprocess.waitFor();//等待shell脚本执行完成
+			Process process = Runtime.getRuntime().exec(new String[]{"/bin/sh","-c", smsurl});
+			//记录进程缓存错误信息
+			final StringBuffer errorLog = new StringBuffer();
+			//获取执行进程的错误流
+			final InputStream errorStream = process.getErrorStream();
+			final InputStream inputStream = process.getInputStream();
+			//处理InputStream的线程
+			new Thread() {
+				public void run() {
+					BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
+					String line = null;
+					try {
+						while ((line = in.readLine()) != null && !errorLog.toString().contains("ERROR")) {
+							if (line != null) {
+								errorLog.append(line);
+							}
+						}
+					} catch (IOException e) {
+						throw new RuntimeException("[shell exec error]:" + errorLog, e);
+					} finally {
+						try {
+							inputStream.close();
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+			}.start();
+			//处理errorStream的线程
+			new Thread() {
+				@Override
+				public void run() {
+					BufferedReader err = new BufferedReader(new InputStreamReader(errorStream));
+					String line = null;
+					try {
+						while ((line = err.readLine()) != null && !errorLog.toString().contains("ERROR")) {
+							if (line != null) {
+								errorLog.append(line);
+							}
+						}
+					} catch (IOException e) {
+						throw new RuntimeException("[shell exec error]:" + errorLog, e);
+					} finally {
+						try {
+							errorStream.close();
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+				}.start();
+
+			logger.info("等待shell脚本执行完成");
+//			Thread.sleep(1000);
+			//异常终止
+			if (errorLog != null && errorLog.length() > 0 && errorLog.toString().contains("ERROR")) {
+			logger.error("shell exec error:" + errorLog);
+			throw new RuntimeException("shell exec error:" + errorLog);
+			}
+			process.waitFor(); //等待shell脚本执行完成
+			
+		} catch (Exception e) {
+			// TODO: handle exception
+			e.printStackTrace();
+			return ResultData.fail();
+		}
+		return ResultData.success();
+	}
+
+
+public ResultData restartBillingServer() {
+		try {
+			// 获取Tomcat路径
+//			String tomcatHome = getTomcatHome(LinuxServerUtil.class.getResource("/").getFile());
+			
+			// 重启tomcat指令
+			//systemWebConfig.getBillingPath()=/usr/local/apache-tomcat-8.5.11/bin/restart_server.sh;这个是脚本路径,注意脚本要有被执行的权限
+			final String restartSh = systemWebConfig.getBillingPath();
+			logger.info("调用指令【{}】进行Tomcat重启", restartSh);
+			new Thread(new Runnable() {
+				
+				@Override
+				public void run() {
+					try {
+						Process killprocess = Runtime.getRuntime().exec(new String[]{"/bin/sh","-c", restartSh});
+					} catch (IOException e) {
+						logger.error("执行重启tomcat服务出现异常。",e);
+					}
+				}
+			}).start();
+
+		} catch (Exception e) {
+			// TODO: handle exception
+			e.printStackTrace();
+			return ResultData.fail();
+		}
+		return ResultData.success();
+	}
