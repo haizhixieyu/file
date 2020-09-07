@@ -104,3 +104,169 @@ public ResultData restartBillingServer() {
 		}
 		return ResultData.success();
 	}
+	
+	
+	
+	#!/bin/bash
+echo -e "\033[33;1m修复cyberAcqNosql的服务状态........ \033[0m"
+ErrorCount=0
+host=`cat /etc/hosts | grep "Server5 " | awk '{print $1}'`
+str=`/bin/ping $host -w 1 -c 1`
+if [ $? -ne 0 ]; then
+    let ErrorCount++
+    echo -e "\n\033[31mThe $host is Unreachable,Please Check! \033[0m \n"
+    exit 1
+else
+
+ ssh Server4 "source /etc/profile; echo -e \"Server5\c \"; echo \" \"; jps -m 2>&1 | grep cyberAcqNosql-ORACLE-CYBERDATAACQ-Query | grep Application"
+ if [ $? -ne 0 ]; then
+     echo -e "\033[41;37mServer5的cyberAcqNosql-ORACLE-CYBERDATAACQ-Query服务状态异常 \033[0m"
+     let ErrorCount++
+     daynow=`date +%Y/%m/%d`
+     timenow=`date +%H:%M:%S`
+     rebootservice_addr=`cat /etc/hosts | grep "Server5" | awk '{print $1}'`
+     echo -e "Server5\t $rebootservice_addr cyberAcqNosql-ORACLE-CYBERDATAACQ-Query\t at $daynow $timenow" >> 异常状态服务列表.txt
+     echo "try to restart Server5 的cyberAcqNosql-ORACLE-CYBERDATAACQ-Query服务"
+     ssh Server5 "source /etc/profile; cd /usr/cybersmart/bigdata/edgeComputingSys/DataAcquisition/lib/cyberRealTimeNoSQL/conf; nohup flume-ng agent --conf ../conf --conf-file cyberAcqNosql-ORACLE-CYBERDATAACQ-Query.conf --name agent 1>../logs/cyberAcqNosql-S.log 2>../logs/cyberAcqNosql-S.log &"
+ fi
+ssh Server5 "source /etc/profile; echo -e \"Server5\c \"; echo \" \"; jps -m 2>&1 | grep cyberAcqNosql-ORACLE-H-CYBERDATAACQ | grep Application"
+if [ $? -ne 0 ]; then
+    echo -e "\033[41;37mServer5的cyberAcqNosql-ORACLE-H-CYBERDATAACQ服务状态异常 \033[0m"
+    let ErrorCount++
+    daynow=`date +%Y/%m/%d`
+    timenow=`date +%H:%M:%S`
+    rebootservice_addr=`cat /etc/hosts | grep "Server5" | awk '{print $1}'`
+    echo -e "Server5\t $rebootservice_addr cyberAcqNosql-ORACLE-H-CYBERDATAACQ\t at $daynow $timenow" >> 异常状态服务列表.txt
+    echo "try to restart Server5 的cyberAcqNosql-ORACLE-H-CYBERDATAACQ服务"
+    ssh Server5 "source /etc/profile; cd /usr/cybersmart/bigdata/edgeComputingSys/DataAcquisition/lib/cyberRealTimeNoSQL/conf; nohup flume-ng agent --conf ../conf --conf-file cyberAcqNosql-ORACLE-H-CYBERDATAACQ.conf --name agent 1>../logs/cyberAcqNosql-H.log 2>../logs/cyberAcqNosql-H.log &"
+fi
+
+ssh Server5 "source /etc/profile; echo -e \"Server5\c \"; echo \" \"; jps -m 2>&1 | grep cyberAcqNosql-ORACLE-SAGD-CYBERDATAACQ-Query | grep Application"
+if [ $? -ne 0 ]; then
+    echo -e "\033[41;37mServer5的cyberAcqNosql-ORACLE-SAGD-CYBERDATAACQ-Query服务状态异常 \033[0m"
+    let ErrorCount++
+    daynow=`date +%Y/%m/%d`
+    timenow=`date +%H:%M:%S`
+    rebootservice_addr=`cat /etc/hosts | grep "Server5" | awk '{print $1}'`
+    echo -e "Server5\t $rebootservice_addr cyberAcqNosql-ORACLE-SAGD-CYBERDATAACQ-Query\t at $daynow $timenow" >> 异常状态服务列表.txt
+    echo "try to restart Server5 的cyberAcqNosql-ORACLE-SAGD-CYBERDATAACQ-Query服务"
+    ssh Server4 "source /etc/profile; cd /usr/cybersmart/bigdata/edgeComputingSys/DataAcquisition/lib/cyberRealTimeNoSQL/conf; nohup flume-ng agent --conf ../conf --conf-file cyberAcqNosql-ORACLE-SAGD-CYBERDATAACQ-Query.conf --name agent 1>../logs/cyberAcqNosql-SAGD.log 2>../logs/cyberAcqNosql-SAGD.log &"
+fi
+fi
+
+host=`cat /etc/hosts | grep "Server4 " | awk '{print $1}'`
+str=`/bin/ping $host -w 1 -c 1`
+if [ $? -ne 0 ]; then
+    let ErrorCount++
+    echo -e "\n\033[31mThe $host is Unreachable,Please Check! \033[0m \n"
+    exit 1
+else
+
+ssh Server4 "source /etc/profile; echo -e \"Server4\c \"; echo \" \"; jps -m 2>&1 | grep cyberAcqNosql-ORACLE-cyberE2-C.conf | grep Application"
+if [ $? -ne 0 ]; then
+    echo -e "\033[41;37mServer4的cyberAcqNosql-ORACLE-cyberE2-C服务状态异常 \033[0m"
+    let ErrorCount++
+    daynow=`date +%Y/%m/%d`
+    timenow=`date +%H:%M:%S`
+    rebootservice_addr=`cat /etc/hosts | grep "Server4" | awk '{print $1}'`
+    echo -e "Server4\t $rebootservice_addr cyberAcqNosql-ORACLE-cyberE2-C\t at $daynow $timenow" >> 异常状态服务列表.txt
+    echo "try to restart Server4 的cyberAcqNosql-ORACLE-cyberE2-C服务"
+    ssh Server4 "source /etc/profile; cd /usr/cybersmart/bigdata/edgeComputingSys/DataAcquisition/lib/cyberRealTimeNoSQL/conf; nohup flume-ng agent --conf ../conf --conf-file cyberAcqNosql-ORACLE-cyberE2-C.conf --name agent 1>../logs/cyberAcqNosql-C.log 2>../logs/cyberAcqNosql-C.log &"
+fi
+
+ssh Server4 "source /etc/profile; echo -e \"Server4\c \"; echo \" \"; jps -m 2>&1 | grep cyberAcqNosql-ORACLE-cyberE2-S.conf | grep Application"
+if [ $? -ne 0 ]; then
+    echo -e "\033[41;37mServer4的cyberAcqNosql-ORACLE-cyberE2-S服务状态异常 \033[0m"
+    let ErrorCount++
+    daynow=`date +%Y/%m/%d`
+    timenow=`date +%H:%M:%S`
+    rebootservice_addr=`cat /etc/hosts | grep "Server4" | awk '{print $1}'`
+    echo -e "Server4\t $rebootservice_addr cyberAcqNosql-ORACLE-cyberE2-S\t at $daynow $timenow" >> 异常状态服务列表.txt
+    echo "try to restart Server4 的cyberAcqNosql-ORACLE-cyberE2-S服务"
+    ssh Server4 "source /etc/profile; cd /usr/cybersmart/bigdata/edgeComputingSys/DataAcquisition/lib/cyberRealTimeNoSQL/conf; nohup flume-ng agent --conf ../conf --conf-file cyberAcqNosql-ORACLE-cyberE2-S.conf --name agent 1>../logs/cyberAcqNosql-S.log 2>../logs/cyberAcqNosql-S.log &"
+fi
+
+ssh Server4 "source /etc/profile; echo -e \"Server4\c \"; echo \" \"; jps -m 2>&1 | grep cyberAcqNosql-ORACLE-cyberE2-H.conf | grep Application"
+if [ $? -ne 0 ]; then
+    echo -e "\033[41;37mServer4的cyberAcqNosql-ORACLE-cyberE2-H服务状态异常 \033[0m"
+    let ErrorCount++
+    daynow=`date +%Y/%m/%d`
+    timenow=`date +%H:%M:%S`
+    rebootservice_addr=`cat /etc/hosts | grep "Server4" | awk '{print $1}'`
+    echo -e "Server4\t $rebootservice_addr cyberAcqNosql-ORACLE-cyberE2-H\t at $daynow $timenow" >> 异常状态服务列表.txt
+    echo "try to restart Server4 的cyberAcqNosql-ORACLE-cyberE2-H服务"
+    ssh Server4 "source /etc/profile; cd /usr/cybersmart/bigdata/edgeComputingSys/DataAcquisition/lib/cyberRealTimeNoSQL/conf; nohup flume-ng agent --conf ../conf --conf-file cyberAcqNosql-ORACLE-cyberE2-H.conf --name agent 1>../logs/cyberAcqNosql-H.log 2>../logs/cyberAcqNosql-H.log &"
+fi
+
+ssh Server4 "source /etc/profile; echo -e \"Server4\c \"; echo \" \"; jps -m 2>&1 | grep cyberAcqNosql-ORACLE-cyberE2-YC_SR.conf | grep Application"
+if [ $? -ne 0 ]; then
+    echo -e "\033[41;37mServer4的cyberAcqNosql-ORACLE-cyberE2-YC_SR服务状态异常 \033[0m"
+    let ErrorCount++
+    daynow=`date +%Y/%m/%d`
+    timenow=`date +%H:%M:%S`
+    rebootservice_addr=`cat /etc/hosts | grep "Server4" | awk '{print $1}'`
+    echo -e "Server4\t $rebootservice_addr cyberAcqNosql-ORACLE-cyberE2-YC_SR\t at $daynow $timenow" >> 异常状态服务列表.txt
+    echo "try to restart Server4 的cyberAcqNosql-ORACLE-cyberE2-YC_SR服务"
+    ssh Server4 "source /etc/profile; cd /usr/cybersmart/bigdata/edgeComputingSys/DataAcquisition/lib/cyberRealTimeNoSQL/conf; nohup /usr/cybersmart/bigdata/edgeComputingSys/DataAcquisition/lib/cyberRealTimeNoSQL/bin/flume-ng agent --conf ../conf --conf-file cyberAcqNosql-ORACLE-cyberE2-YC_SR.conf --name agent 1>../logs/cyberAcqNosql-YC_SR.log 2>../logs/cyberAcqNosql-YC_SR.log &"
+fi
+
+ssh Server4 "source /etc/profile; echo -e \"Server4\c \"; echo \" \"; jps -m 2>&1 | grep cyberAcqNosql-ORACLE-cyberE2-YC_ST.conf | grep Application"
+if [ $? -ne 0 ]; then
+    echo -e "\033[41;37mServer4的cyberAcqNosql-ORACLE-cyberE2-YC_ST服务状态异常 \033[0m"
+    let ErrorCount++
+    daynow=`date +%Y/%m/%d`
+    timenow=`date +%H:%M:%S`
+    rebootservice_addr=`cat /etc/hosts | grep "Server4" | awk '{print $1}'`
+    echo -e "Server4\t $rebootservice_addr cyberAcqNosql-ORACLE-cyberE2-YC_ST\t at $daynow $timenow" >> 异常状态服务列表.txt
+    echo "try to restart Server4 的cyberAcqNosql-ORACLE-cyberE2-YC_ST服务"
+    ssh Server4 "source /etc/profile; cd /usr/cybersmart/bigdata/edgeComputingSys/DataAcquisition/lib/cyberRealTimeNoSQL/conf; nohup /usr/cybersmart/bigdata/edgeComputingSys/DataAcquisition/lib/cyberRealTimeNoSQL/bin/flume-ng agent --conf ../conf --conf-file cyberAcqNosql-ORACLE-cyberE2-YC_ST.conf --name agent 1>../logs/cyberAcqNosql-YC_ST.log 2>../logs/cyberAcqNosql-YC_ST.log &"
+fi
+
+ssh Server4 "source /etc/profile; echo -e \"Server4\c \"; echo \" \"; jps -m 2>&1 | grep cyberAcqNosql-ORACLE-cyberE2-DMS.conf | grep Application"
+if [ $? -ne 0 ]; then
+    echo -e "\033[41;37mServer4的cyberAcqNosql-ORACLE-cyberE2-DMS服务状态异常 \033[0m"
+    let ErrorCount++
+    daynow=`date +%Y/%m/%d`
+    timenow=`date +%H:%M:%S`
+    rebootservice_addr=`cat /etc/hosts | grep "Server4" | awk '{print $1}'`
+    echo -e "Server4\t $rebootservice_addr cyberAcqNosql-ORACLE-cyberE2-DMS\t at $daynow $timenow" >> 异常状态服务列表.txt
+    echo "try to restart Server4 的cyberAcqNosql-ORACLE-cyberE2-DMS服务"
+    ssh Server4 "source /etc/profile; cd /usr/cybersmart/bigdata/edgeComputingSys/DataAcquisition/lib/cyberRealTimeNoSQL/conf; nohup /usr/cybersmart/bigdata/edgeComputingSys/DataAcquisition/lib/cyberRealTimeNoSQL/bin/flume-ng agent --conf ../conf --conf-file cyberAcqNosql-ORACLE-cyberE2-DMS.conf --name agent 1>../logs/cyberAcqNosql-DMS.log 2>../logs/cyberAcqNosql-DMS.log &"
+fi
+
+fi
+
+if [ $ErrorCount == 0 ];then
+  echo -e "\033[32m-----------------------cyberAcqNosql的服务状态正常----------------------- \033[0m"
+  echo -e " \033[0m"
+else
+  echo -e "\033[32m-----------------------已修复cyberAcqNosql的服务状态异常----------------------- \033[0m"
+  echo -e " \033[0m"
+  exit 2
+fi
+
+#!/bin/bash
+cd /usr/cybersmart/bigdata/setup
+. ./path-loading.sh
+. ./configure-loading.sh
+install_cyberAcqNosql(){
+        tar -zxvf $sourcepath/cyberAcqNosql.tar.gz -C $uzipedgeComputingSyspath/DataAcquisition/lib
+	#cd $cyberRealTimeNoSQLpath/conf
+cat >> /etc/profile << EOF
+
+#cyberAcqNosql的环境变量配置
+export CYBERACQNOSQL_HOME=$cyberRealTimeNoSQLpath
+export PATH=\$PATH:\$CYBERACQNOSQL_HOME\/bin
+
+EOF
+        #source /etc/profile
+	#host=$(hostname)
+	#if [ $host == "node-1" ];then
+	#	cp $sourcepath/cyberAcqNosql-client-cyberDataAcq.conf $cyberAcqNosqlpath/conf
+	#elif [ $host == "node-2" ];then
+        #	cp $sourcepath/cyberAcqNosql-client-cyberDataAcq.conf $cyberAcqNosqlpath/conf
+	#else 
+	#	cp $sourcepath/cyberAcqNosql-server-cyberDataAcq.conf $cyberAcqNosqlpath/conf
+	#fi
+}
+install_cyberAcqNosql
